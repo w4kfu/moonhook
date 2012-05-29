@@ -17,15 +17,17 @@ void create_process(char *name)
 
   if (!CreateProcessA(name, 0, 0, 0, 0, CREATE_SUSPENDED, 0, 0, &si, &pi))
   {
-  printf("[-] CreateProcessA() failed : %s is correct ? LastError : %x\n", name, GetLastError());
-  exit(EXIT_FAILURE);
+    fprintf(stderr, "[-] CreateProcessA() failed : %s is correct ? LastError : %x\n", name, GetLastError());
+    exit(EXIT_FAILURE);
   }
+
   Addr = (DWORD)VirtualAllocEx(pi.hProcess, 0, strlen(dll_name) + 1, MEM_COMMIT, PAGE_READWRITE);
+
   if (Addr == NULL)
   {
-  printf("[-] VirtualAllocEx failed(), LastError : %x\n", GetLastError());
-  TerminateProcess(pi.hProcess, 42);
-  exit(EXIT_FAILURE);
+    fprintf(stderr, "[-] VirtualAllocEx failed(), LastError : %x\n", GetLastError());
+    TerminateProcess(pi.hProcess, 42);
+    exit(EXIT_FAILURE);
   }
 
   WriteProcessMemory(pi.hProcess, (LPVOID)Addr, (void*)dll_name, strlen(dll_name) + 1, NULL);
