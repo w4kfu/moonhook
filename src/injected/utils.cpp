@@ -22,7 +22,7 @@ std::list<PLDR_MODULE> GetModuleList(void)
 
     pTEB = getCurrentTeb();
 
-    pLDR = pTEB->Peb->LoaderData;
+	pLDR = pTEB->Peb->LoaderData;
 
     pMark = &(pLDR->InMemoryOrderModuleList);
 
