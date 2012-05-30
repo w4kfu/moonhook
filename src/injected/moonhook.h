@@ -8,5 +8,6 @@
 # include "types.h"
 
 BOOL GetSeDebugPrivilege(void);
+std::list<PLDR_MODULE> GetModuleList(void);
 
 #endif /* !MOONHOOK_H_ */

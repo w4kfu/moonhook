@@ -27,6 +27,19 @@ BOOL GetSeDebugPrivilege(void)
     return retval;
 }
 
+void MoonHook(void)
+{
+	std::list<PLDR_MODULE> ModuleList(0);
+
+	ModuleList = GetModuleList();
+
+	for (std::list<PLDR_MODULE>::iterator it = ModuleList.begin();
+		it != ModuleList.end(); it++)
+	{
+
+	}
+}
+
 extern "C"
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
 {
