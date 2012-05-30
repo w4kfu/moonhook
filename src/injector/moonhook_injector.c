@@ -23,7 +23,7 @@ void create_process(char *name)
 
   Addr = (DWORD)VirtualAllocEx(pi.hProcess, 0, strlen(dll_name) + 1, MEM_COMMIT, PAGE_READWRITE);
 
-  if (Addr == NULL)
+  if (Addr == 0)
   {
     fprintf(stderr, "[-] VirtualAllocEx failed(), LastError : %x\n", GetLastError());
     TerminateProcess(pi.hProcess, 42);
@@ -31,9 +31,9 @@ void create_process(char *name)
   }
 
   WriteProcessMemory(pi.hProcess, (LPVOID)Addr, (void*)dll_name, strlen(dll_name) + 1, NULL);
-  hThread = CreateRemoteThread(pi.hProcess, NULL, 0,
-  (LPTHREAD_START_ROUTINE) ::GetProcAddress(hKernel32,"LoadLibraryA" ),
-  (LPVOID)Addr, 0, NULL);
+	hThread = CreateRemoteThread(pi.hProcess, NULL, 0,
+				(LPTHREAD_START_ROUTINE) GetProcAddress(hKernel32,"LoadLibraryA" ), 
+				(LPVOID)Addr, 0, NULL);
   WaitForSingleObject(hThread, INFINITE);
   ResumeThread(pi.hThread);
   CloseHandle(hThread);
