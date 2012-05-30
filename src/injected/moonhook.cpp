@@ -62,6 +62,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
 	{
 		 // Usefull or not ?
 		//GetSeDebugPrivilege();
+		RemoveModuleFromPEB(TEXT(MOONHOOK));
 		MoonHook();
 	}
 	return TRUE;
