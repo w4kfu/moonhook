@@ -3,6 +3,7 @@
 
 # include <windows.h>
 # include <stdio.h>
+# include <list>
 # include "error.h"
 
 int GetSeDebugPrivilege(void)

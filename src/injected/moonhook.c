@@ -30,5 +30,7 @@ int GetSeDebugPrivilege(void)
 int main(void)
 {
 
+  // Usefull or not ?
+  GetSeDebugPrivilege();
   return 0;
 }
