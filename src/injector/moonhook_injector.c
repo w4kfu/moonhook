@@ -8,7 +8,7 @@ void create_process(char *name)
   DWORD Addr;
   HANDLE hThread;
   HMODULE hKernel32;
-  PCHAR dll_name = "moonhook.dll";
+  PCHAR dll_name = "DllMoonHook.dll";
 
   hKernel32 = GetModuleHandleA("kernel32.dll");
   memset(&si, 0, sizeof(STARTUPINFO));
@@ -48,7 +48,7 @@ int main(int argc, char **argv)
     fprintf(stderr, "Usage : %s <target.exe>\n", argv[0]);
     exit(EXIT_FAILURE);
   }
-  Wow64DisableWow64FsRedirection(&OldValue);
+  //Wow64DisableWow64FsRedirection(&OldValue);
   create_process(argv[1]);
   return (0);
 }

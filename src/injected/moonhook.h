@@ -6,6 +6,7 @@
 # include <stdio.h>
 # include "error.h"
 # include "types.h"
+# include "log.h"
 
 BOOL GetSeDebugPrivilege(void);
 std::list<PLDR_MODULE> GetModuleList(void);

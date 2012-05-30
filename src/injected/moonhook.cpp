@@ -31,30 +31,38 @@ void MoonHook(void)
 {
 	std::list<PLDR_MODULE> ModuleList(0);
 	PLDR_MODULE pLM;
-	FILE *fp;
+	HANDLE HFile;
 
 	// TODO Set LogFilename to ModuleFileName
-	fp = fopen("log.txt", "w");
+	HFile = OpenLog("log.txt");
+
+	// Debug :)
+	//__asm jmp $
 
 	ModuleList = GetModuleList();
 
-	fwrite("[+] GetModuleList\n", strlen("[+] GetModuleList\n"), 1, fp);
+	logMessage(HFile, "[+] GetModuleList");
 
 	for (std::list<PLDR_MODULE>::iterator it = ModuleList.begin();
 		it != ModuleList.end(); it++)
 	{
 		pLM = *it;
-		fwrite(pLM->BaseDllName, wcslen(pLM->BaseDllName), 1, fp);
-		fwrite("\n", 1, 1, fp);
+		wlogMessage(HFile, pLM->BaseDllName);
 	}
-	fclose(fp);
+	CloseHandle(HFile);
 }
 
 extern "C"
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
 {
-  // Usefull or not ?
-  GetSeDebugPrivilege();
-  MoonHook();
-  return 0;
+
+	if (fdwReason == DLL_PROCESS_DETACH)
+		return (TRUE);
+	if (fdwReason == DLL_PROCESS_ATTACH)
+	{
+		 // Usefull or not ?
+		//GetSeDebugPrivilege();
+		MoonHook();
+	}
+	return TRUE;
 }
