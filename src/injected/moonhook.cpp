@@ -1,6 +1,6 @@
 #include "moonhook.h"
 
-DWORD GetSeDebugPrivilege(void)
+BOOL GetSeDebugPrivilege(void)
 {
     HANDLE htok;
     TOKEN_PRIVILEGES tp;
@@ -27,9 +27,9 @@ DWORD GetSeDebugPrivilege(void)
     return retval;
 }
 
-int main(void)
+extern "C"
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
 {
-
   // Usefull or not ?
   GetSeDebugPrivilege();
   return 0;
