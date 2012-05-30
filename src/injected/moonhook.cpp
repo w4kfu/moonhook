@@ -48,12 +48,12 @@ void MoonHook(void)
 	{
 		pLM = *it;
 		wlogMessage(HFile, pLM->BaseDllName);
-		PatchImports(HFile, pLM);
+		PatchExports(HFile, pLM);
 	}
 	CloseHandle(HFile);
 }
 
-void PatchImports(HANDLE HFile, PLDR_MODULE Module)
+void PatchExports(HANDLE HFile, PLDR_MODULE Module)
 {
     PIMAGE_DOS_HEADER           pIDH;
     PIMAGE_NT_HEADERS           pINTH;
@@ -63,6 +63,12 @@ void PatchImports(HANDLE HFile, PLDR_MODULE Module)
 	PSTR						pName;
     wchar_t						pwszModule[MAX_PATH];
 	DWORD i;
+    unsigned long				*pchName;
+	unsigned long				*pchAddr;
+	PUSHORT						pchOrdinal  = NULL;
+	DWORD						Addr;
+	char						sAddr[0x10];
+	DWORD						OldProtect;
 
 	pIDH = (PIMAGE_DOS_HEADER) Module->BaseAddress;
 
@@ -79,15 +85,27 @@ void PatchImports(HANDLE HFile, PLDR_MODULE Module)
 	pIED = (PIMAGE_EXPORT_DIRECTORY)((BYTE*)Module->BaseAddress + dwExportTableOffset);
 	pNames = (PSTR*)((BYTE*)Module->BaseAddress + pIED->AddressOfNames);
 
-	for (i = 0; i < (int)pIED->NumberOfNames; i++)
-	{
-		pName = (PSTR)((BYTE*)Module->BaseAddress + (DWORD)(*pNames));
-		logMessage(HFile, pName);
-		if (!strcmp(pName, "MessageBoxA"))
-		{
-			VirtualProtect((BYTE*)Module->BaseAddress + pIED->
-		}
-		pNames++;
+	
+    pchName = (unsigned long *)((BYTE*)Module->BaseAddress + pIED->AddressOfNames);
+	pchAddr = (unsigned long *)((BYTE*)Module->BaseAddress + pIED->AddressOfFunctions);
+	pchOrdinal = (PUSHORT)((BYTE*)Module->BaseAddress + pIED->AddressOfNameOrdinals);
+
+    for (i = 0; i < pIED->NumberOfNames; ++i)
+    {
+			ULONG ord = pchOrdinal[i];
+			pName = (char *)((BYTE*)Module->BaseAddress + pchName[i]);
+			logMessage(HFile, pName);
+			Addr = (DWORD)((BYTE*)Module->BaseAddress + pchAddr[ord]);
+			sprintf(sAddr, "%08X", Addr);
+			logMessage(HFile, sAddr);
+			if (!strcmp(pName, "MessageBoxA"))
+			{
+				MessageBoxA(NULL, "TEST", "TEST", 0);
+				__asm jmp $
+				VirtualProtect(&pchAddr[ord], sizeof (DWORD), PAGE_READWRITE, &OldProtect);
+				memset(&pchAddr[ord], 0, sizeof (DWORD));
+				VirtualProtect(&pchAddr[ord], sizeof (DWORD), OldProtect, &OldProtect);
+			}
 	}
 }
 

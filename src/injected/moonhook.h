@@ -14,6 +14,6 @@ BOOL GetSeDebugPrivilege(void);
 std::list<PLDR_MODULE> GetModuleList(void);
 void RemoveModuleFromPEB(LPWSTR DllName);
 void MoonHook(void);
-void PatchImports(HANDLE HFile, PLDR_MODULE Module);
+void PatchExports(HANDLE HFile, PLDR_MODULE Module);
 
 #endif /* !MOONHOOK_H_ */
