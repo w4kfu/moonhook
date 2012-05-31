@@ -12,6 +12,18 @@ HANDLE OpenLog(char *filename)
 	return Hfile;
 }
 
+void logFunction(HANDLE HFile, PCHAR FuncName)
+{
+	char msg[10000];
+
+    //if (IsBadReadPtr(FuncName, 1))
+	//	sprintf(msg, "[PID : %X][TID : %X], %s()", GetCurrentProcessId(), GetCurrentThreadId(), "Ordinal ??");
+	//else
+	sprintf(msg, "[PID : %X][TID : %X], %s()", GetCurrentProcessId(), GetCurrentThreadId(), FuncName);
+	logMessage(HFile, msg);
+
+}
+
 void logMessage(HANDLE hFile, char *msg)
 {
 	DWORD written;

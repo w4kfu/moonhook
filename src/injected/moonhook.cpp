@@ -1,5 +1,9 @@
 #include "moonhook.h"
 
+// FIXME clean this shit !!!
+HANDLE HFilee;
+char ordString[32];
+
 BOOL GetSeDebugPrivilege(void)
 {
     HANDLE htok;
@@ -31,16 +35,23 @@ void MoonHook(void)
 {
 	std::list<PLDR_MODULE> ModuleList(0);
 	PLDR_MODULE pLM;
+	wchar_t ModuleName[MAX_PATH];
 	HANDLE HFile;
 
 	// TODO Set LogFilename to ModuleFileName
 	HFile = OpenLog("log.txt");
 
+	HFilee = HFile;
+
 	// Debug :)
 	//__asm jmp $
 
+	//RemoveModuleFromPEB(TEXT(MOONHOOK));
+
 	ModuleList = GetModuleList();
 
+	GetModuleFileNameW(NULL, ModuleName, MAX_PATH);
+	
 	logMessage(HFile, "[+] GetModuleList");
 
 	for (std::list<PLDR_MODULE>::iterator it = ModuleList.begin();
@@ -48,9 +59,124 @@ void MoonHook(void)
 	{
 		pLM = *it;
 		wlogMessage(HFile, pLM->BaseDllName);
-		PatchExports(HFile, pLM);
+		//PatchExports(HFile, pLM);
+		if (!wcscmp(ModuleName, pLM->BaseDllName))
+		{
+			PatchImports(HFile, pLM);
+		}
 	}
-	CloseHandle(HFile);
+	logMessage(HFile, "\r\n");
+}
+
+void PatchImports(HANDLE HFile, PLDR_MODULE Module)
+{
+    PIMAGE_DOS_HEADER           pIDH;
+    PIMAGE_NT_HEADERS           pINTH;
+    PIMAGE_IMPORT_DESCRIPTOR    pIID;
+    DWORD                       dwTemp;
+    DWORD                       dwImportTableOffset;
+    DWORD                       dwOldProtect;
+
+	pIDH = (PIMAGE_DOS_HEADER) Module->BaseAddress;
+
+    if (IsBadReadPtr(Module->BaseAddress, sizeof(IMAGE_DOS_HEADER)))
+        return;
+
+    pINTH = (PIMAGE_NT_HEADERS)((BYTE*)Module->BaseAddress + pIDH->e_lfanew);
+
+	dwImportTableOffset = pINTH->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress;
+
+    if (dwImportTableOffset == 0)
+        return;
+
+	pIID = (PIMAGE_IMPORT_DESCRIPTOR)((BYTE*)Module->BaseAddress + dwImportTableOffset);
+
+    while (TRUE)
+    {
+        LPSTR                   pszModule   = NULL;
+        PIMAGE_THUNK_DATA       pITDA       = NULL;
+        PIMAGE_THUNK_DATA       pIINA       = NULL;
+        wchar_t pwszModule[MAX_PATH];
+        
+
+        //
+        // return if no first thunk or no orginalFirstThunk
+        //
+        if (pIID->FirstThunk == 0 || pIID->OriginalFirstThunk == 0)
+        {
+            // Loop exit condition
+            break;
+        }
+
+        //
+        // DLL name from which functions are imported
+        //
+        pszModule = (LPSTR)((BYTE*)Module->BaseAddress + pIID->Name);
+        swprintf(pwszModule, L"%S", pszModule);
+
+        //
+        // First thunk points to IMAGE_THUNK_DATA
+        //
+        pITDA = (PIMAGE_THUNK_DATA)((BYTE*)Module->BaseAddress + (DWORD)pIID->FirstThunk);
+
+        //
+        // OriginalFirstThunk points to IMAGE_IMPORT_BY_NAME array. But still we
+        // use IMAGE_THUNK_DATA structure to reference it for ease of programming
+        //
+        pIINA = (PIMAGE_THUNK_DATA)((BYTE*)Module->BaseAddress + (DWORD)pIID->OriginalFirstThunk);
+
+        while (pITDA->u1.Ordinal != 0)
+        {
+			PVOID   pfnOld;
+            PVOID   pfnNew;
+
+            pfnOld = (PVOID)pITDA->u1.Function;
+
+            // This is used to find out the name of API
+            if (pIINA)
+            {
+					LPSTR fnName = NULL;
+                    bool exportedByOrdinal = false;
+
+                    if (!IMAGE_SNAP_BY_ORDINAL(pIINA->u1.Ordinal))
+                    {
+                        // Exported by name
+                        PIMAGE_IMPORT_BY_NAME pIIN = (PIMAGE_IMPORT_BY_NAME)((BYTE*)Module->BaseAddress + pIINA->u1.AddressOfData);
+                        fnName = (LPSTR)pIIN->Name;
+                    }
+                    else
+                    {
+                        // Exported by ordinal
+                        // To-Do!!!
+                        // At this point, we can instead load the binary image
+                        // from the module file on disk and get the function name
+                        // string
+                        sprintf(ordString, "Ord%x", pIINA->u1.Ordinal);
+                        fnName = ordString;
+                        exportedByOrdinal = true;
+                    }
+					if (strcmp(fnName, "_acmdln"))
+					{
+
+					if (VirtualProtect(&pITDA->u1.Function, sizeof(DWORD), PAGE_READWRITE, &dwOldProtect))
+                    {
+						//CHAR wut[100];
+						//sprintf(wut, "%08X", pITDA->u1.Function);
+						//logMessage(HFile, wut);
+						pITDA->u1.Function = (DWORD)SetupTrampo(HFile, fnName, (PVOID)pITDA->u1.Function);
+						VirtualProtect(&pITDA->u1.Function, sizeof(DWORD), dwOldProtect, &dwOldProtect);
+					}
+					logMessage(HFile, fnName);
+					}
+					
+			}
+            pITDA++;
+            pIINA++;
+        }
+
+        // Next module in Import table
+        pIID++;
+    }
 }
 
 void PatchExports(HANDLE HFile, PLDR_MODULE Module)
@@ -115,12 +241,14 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
 {
 
 	if (fdwReason == DLL_PROCESS_DETACH)
+	{
+		CloseHandle(HFilee);
 		return (TRUE);
+	}
 	if (fdwReason == DLL_PROCESS_ATTACH)
 	{
 		 // Usefull or not ?
 		//GetSeDebugPrivilege();
-		RemoveModuleFromPEB(TEXT(MOONHOOK));
 		MoonHook();
 	}
 	return TRUE;

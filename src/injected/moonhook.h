@@ -15,5 +15,7 @@ std::list<PLDR_MODULE> GetModuleList(void);
 void RemoveModuleFromPEB(LPWSTR DllName);
 void MoonHook(void);
 void PatchExports(HANDLE HFile, PLDR_MODULE Module);
+void PatchImports(HANDLE HFile, PLDR_MODULE Module);
+BYTE *SetupTrampo(HANDLE HFile, PCHAR NameFunc, PVOID Addr);
 
 #endif /* !MOONHOOK_H_ */
