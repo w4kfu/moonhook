@@ -10,6 +10,7 @@ void create_process(char *name)
   HMODULE hKernel32;
   PCHAR dll_name = "DllMoonHook.dll";
 
+
   hKernel32 = GetModuleHandleA("kernel32.dll");
   memset(&si, 0, sizeof(STARTUPINFO));
   si.cb = sizeof(STARTUPINFO);
@@ -30,11 +31,12 @@ void create_process(char *name)
     exit(EXIT_FAILURE);
   }
 
-  WriteProcessMemory(pi.hProcess, (LPVOID)Addr, (void*)dll_name, strlen(dll_name) + 1, NULL);
+  WriteProcessMemory(pi.hProcess, (LPVOID)Addr, (void*)dll_name, strlen(dll_name), NULL);
 	hThread = CreateRemoteThread(pi.hProcess, NULL, 0,
-				(LPTHREAD_START_ROUTINE) GetProcAddress(hKernel32,"LoadLibraryA" ), 
+				(LPTHREAD_START_ROUTINE) GetProcAddress(hKernel32,"LoadLibraryA"), 
 				(LPVOID)Addr, 0, NULL);
   WaitForSingleObject(hThread, INFINITE);
+  VirtualFreeEx(pi.hProcess, (LPVOID)Addr, strlen(dll_name), MEM_COMMIT);
   ResumeThread(pi.hThread);
   CloseHandle(hThread);
 }

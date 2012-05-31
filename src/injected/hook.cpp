@@ -42,7 +42,7 @@ BYTE *SetupTrampo(HANDLE HFile, PCHAR NameFunc, PVOID Addr)
 	// POPA
 	*(Trampo + 28) = 0x61;
 
-	if (!strcmp(NameFunc, "__CreateWindowExW"))
+	if (!strcmp(NameFunc, "__getenv"))
 	{
 		*(Trampo + 29) = 0xEB;
 		*(Trampo + 30) = 0xFE;

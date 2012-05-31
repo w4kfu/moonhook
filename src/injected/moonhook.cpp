@@ -155,18 +155,20 @@ void PatchImports(HANDLE HFile, PLDR_MODULE Module)
                         fnName = ordString;
                         exportedByOrdinal = true;
                     }
-					if (strcmp(fnName, "_acmdln"))
+					//if (strcmp(fnName, "_acmdln") || strcmp(fnName, "_pctype"))
+					if (fnName[0] != '_')
+					//if (!strcmp(fnName, "LOL"))
 					{
 
-					if (VirtualProtect(&pITDA->u1.Function, sizeof(DWORD), PAGE_READWRITE, &dwOldProtect))
-                    {
+						if (VirtualProtect(&pITDA->u1.Function, sizeof(DWORD), PAGE_READWRITE, &dwOldProtect))
+						{
 						//CHAR wut[100];
 						//sprintf(wut, "%08X", pITDA->u1.Function);
 						//logMessage(HFile, wut);
 						pITDA->u1.Function = (DWORD)SetupTrampo(HFile, fnName, (PVOID)pITDA->u1.Function);
 						VirtualProtect(&pITDA->u1.Function, sizeof(DWORD), dwOldProtect, &dwOldProtect);
-					}
-					logMessage(HFile, fnName);
+						}
+						logMessage(HFile, fnName);
 					}
 					
 			}
@@ -235,18 +237,17 @@ void PatchExports(HANDLE HFile, PLDR_MODULE Module)
 	}
 }
 
-
-extern "C"
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
 {
 
 	if (fdwReason == DLL_PROCESS_DETACH)
 	{
-		CloseHandle(HFilee);
-		return (TRUE);
+		//CloseHandle(HFilee);
+		return TRUE;
 	}
 	if (fdwReason == DLL_PROCESS_ATTACH)
 	{
+		//DisableThreadLibraryCalls(GetModuleHandleA(MOONHOOK));
 		 // Usefull or not ?
 		//GetSeDebugPrivilege();
 		MoonHook();
