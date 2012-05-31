@@ -98,31 +98,16 @@ void PatchImports(HANDLE HFile, PLDR_MODULE Module)
         PIMAGE_THUNK_DATA       pIINA       = NULL;
         wchar_t pwszModule[MAX_PATH];
         
-
-        //
-        // return if no first thunk or no orginalFirstThunk
-        //
         if (pIID->FirstThunk == 0 || pIID->OriginalFirstThunk == 0)
         {
-            // Loop exit condition
             break;
         }
 
-        //
-        // DLL name from which functions are imported
-        //
         pszModule = (LPSTR)((BYTE*)Module->BaseAddress + pIID->Name);
         swprintf(pwszModule, L"%S", pszModule);
 
-        //
-        // First thunk points to IMAGE_THUNK_DATA
-        //
         pITDA = (PIMAGE_THUNK_DATA)((BYTE*)Module->BaseAddress + (DWORD)pIID->FirstThunk);
 
-        //
-        // OriginalFirstThunk points to IMAGE_IMPORT_BY_NAME array. But still we
-        // use IMAGE_THUNK_DATA structure to reference it for ease of programming
-        //
         pIINA = (PIMAGE_THUNK_DATA)((BYTE*)Module->BaseAddress + (DWORD)pIID->OriginalFirstThunk);
 
         while (pITDA->u1.Ordinal != 0)
@@ -132,7 +117,6 @@ void PatchImports(HANDLE HFile, PLDR_MODULE Module)
 
             pfnOld = (PVOID)pITDA->u1.Function;
 
-            // This is used to find out the name of API
             if (pIINA)
             {
 					LPSTR fnName = NULL;
@@ -140,33 +124,25 @@ void PatchImports(HANDLE HFile, PLDR_MODULE Module)
 
                     if (!IMAGE_SNAP_BY_ORDINAL(pIINA->u1.Ordinal))
                     {
-                        // Exported by name
                         PIMAGE_IMPORT_BY_NAME pIIN = (PIMAGE_IMPORT_BY_NAME)((BYTE*)Module->BaseAddress + pIINA->u1.AddressOfData);
                         fnName = (LPSTR)pIIN->Name;
                     }
                     else
                     {
-                        // Exported by ordinal
-                        // To-Do!!!
-                        // At this point, we can instead load the binary image
-                        // from the module file on disk and get the function name
-                        // string
                         sprintf(ordString, "Ord%x", pIINA->u1.Ordinal);
                         fnName = ordString;
                         exportedByOrdinal = true;
                     }
-					//if (strcmp(fnName, "_acmdln") || strcmp(fnName, "_pctype"))
 					if (fnName[0] != '_')
-					//if (!strcmp(fnName, "LOL"))
 					{
 
 						if (VirtualProtect(&pITDA->u1.Function, sizeof(DWORD), PAGE_READWRITE, &dwOldProtect))
 						{
-						//CHAR wut[100];
-						//sprintf(wut, "%08X", pITDA->u1.Function);
-						//logMessage(HFile, wut);
-						pITDA->u1.Function = (DWORD)SetupTrampo(HFile, fnName, (PVOID)pITDA->u1.Function);
-						VirtualProtect(&pITDA->u1.Function, sizeof(DWORD), dwOldProtect, &dwOldProtect);
+							//CHAR wut[100];
+							//sprintf(wut, "%08X", pITDA->u1.Function);
+							//logMessage(HFile, wut);
+							pITDA->u1.Function = (DWORD)SetupTrampo(HFile, fnName, (PVOID)pITDA->u1.Function);
+							VirtualProtect(&pITDA->u1.Function, sizeof(DWORD), dwOldProtect, &dwOldProtect);
 						}
 						logMessage(HFile, fnName);
 					}
@@ -176,7 +152,6 @@ void PatchImports(HANDLE HFile, PLDR_MODULE Module)
             pIINA++;
         }
 
-        // Next module in Import table
         pIID++;
     }
 }
